@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Instrument-panel ledger — design tokens.
+   Every colour is defined on bare :root (light). Dark redefines the SAME
+   tokens; it never introduces new ones. See CLAUDE.md.
+   --------------------------------------------------------------------------- */
+
+@theme {
+  --font-sans: "IBM Plex Sans Variable", "Segoe UI", system-ui, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Consolas, Menlo, monospace;
+
+  /* Type ramp. Nothing a human typed is ever set below 14px. */
+  --text-2xs: 0.75rem;    /* 12 — column labels, uppercase only */
+  --text-xs: 0.8125rem;   /* 13 — dense table meta */
+  --text-sm: 0.875rem;    /* 14 — floor for human-entered content */
+  --text-base: 1rem;      /* 16 */
+  --text-lg: 1.25rem;     /* 20 */
+  --text-xl: 1.5rem;      /* 24 */
+  --text-2xl: 2rem;       /* 32 */
+  --text-3xl: 2.5rem;     /* 40 */
+  --text-4xl: 3.5rem;     /* 56 — the odometer hero */
+
+  /* Tailwind's default 4px step. The 8px rhythm is kept by using even
+     numbers on the scale (p-2 = 8px, p-4 = 16px, gap-6 = 24px); overriding
+     --spacing to 0.5rem instead doubles EVERY utility, including max-w-*,
+     which silently made a 14rem input 28rem wide. */
+  --spacing: 0.25rem;
+
+  --radius-sm: 2px;
+  --radius-DEFAULT: 2px;
+}
+
+:root {
+  color-scheme: light;
+
+  --paper: #f7f5f0;
+  --paper-raised: #ffffff;
+  --ink: #16191d;          /* 16.2:1 on paper */
+  --ink-muted: #585349;    /* 7.0:1 on paper */
+  --rule: #d7d2c7;
+  --signal: #a0530a;       /* 5.16:1 on paper — AA for text */
+  --signal-bright: #e8920b;/* 2.26:1 — LARGE FILLS ONLY, never text */
+
+  /* Categorical ramp. Every value clears AA as text; hue is always
+     redundant with a letter monogram and a fill pattern. */
+  --cat-business: #1f6fb2; /* 4.85:1 */
+  --cat-personal: #2e7d4f; /* 4.63:1 */
+  --cat-gas: #a0530a;      /* 5.16:1 */
+  --cat-service: #3e6e6e;  /* 5.27:1 */
+  --cat-info: #6b6558;     /* 5.31:1 */
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+    --paper: #15171a;
+    --paper-raised: #1e2124;
+    --ink: #ede9e0;
+    --ink-muted: #a79e8e;
+    --rule: #3a3a36;
+    --signal: #f2a93c;
+    --signal-bright: #ffc266;
+    --cat-business: #6fb0e0;
+    --cat-personal: #6fbf8e;
+    --cat-gas: #f2a93c;
+    --cat-service: #7fb5b5;
+    --cat-info: #a79e8e;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #15171a;
+  --paper-raised: #1e2124;
+  --ink: #ede9e0;
+  --ink-muted: #a79e8e;
+  --rule: #3a3a36;
+  --signal: #f2a93c;
+  --signal-bright: #ffc266;
+  --cat-business: #6fb0e0;
+  --cat-personal: #6fbf8e;
+  --cat-gas: #f2a93c;
+  --cat-service: #7fb5b5;
+  --cat-info: #a79e8e;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-signal: var(--signal);
+  --color-signal-bright: var(--signal-bright);
+  --color-cat-business: var(--cat-business);
+  --color-cat-personal: var(--cat-personal);
+  --color-cat-gas: var(--cat-gas);
+  --color-cat-service: var(--cat-service);
+  --color-cat-info: var(--cat-info);
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* If it counts, it's mono. Monospace gives tabular alignment by
+   construction, and the fallback stack is monospaced too — so the odometer
+   column still aligns before the webfont lands. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+}
+
+/* Computed-cell ground: a value derived by arithmetic, not typed by a human.
+   One repeating-linear-gradient = zero extra DOM nodes across 3,300 rows. */
+.computed {
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rule) 40%, transparent) 0 1px,
+    transparent 1px 7px
+  );
+  /* Sized to the text, not the cell: run it to the full column width on
+     every row and it stops being a mark on a value and becomes a texture
+     down the page. */
+  background-size: 100% 1.1em;
+  background-position: left bottom;
+  background-repeat: no-repeat;
+}
+
+/* Focus is always visible. 2px signal, 2px offset, 0ms — nobody standing at
+   a pump should wait on a transition. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

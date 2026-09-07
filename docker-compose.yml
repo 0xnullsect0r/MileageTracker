@@ -1,0 +1,74 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-logbook}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-logbook}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-logbook} -d ${POSTGRES_DB:-logbook}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # No published port: only the app reaches it, over the compose network.
+
+  parser:
+    build: ./parser
+    restart: unless-stopped
+    environment:
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-32}
+    # Parses untrusted uploads, so: no volumes, no DB, no network exposure,
+    # read-only root filesystem, and a capped tmpfs for the scratch file.
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      parser:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-logbook}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-logbook}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      PARSER_URL: http://parser:8000
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-32}
+      # Behind an existing reverse proxy: trust X-Forwarded-*, and let the
+      # proxy terminate TLS. Set COOKIE_SECURE=false only for plain-HTTP LAN.
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      TZ: ${TZ:-America/New_York}
+      NODE_ENV: production
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  uploads:

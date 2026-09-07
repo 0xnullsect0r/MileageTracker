@@ -1,0 +1,12 @@
+# Development overlay. Opt-in, never applied by default:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db parser
+#
+# It publishes Postgres and the parser on the host so `pnpm dev` can reach
+# them. The production compose deliberately publishes neither.
+services:
+  db:
+    ports:
+      - "55432:5432"
+  parser:
+    ports:
+      - "58000:8000"

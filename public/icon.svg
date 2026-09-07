@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Logbook">
+  <rect width="64" height="64" fill="#f7f5f0"/>
+  <!-- Ruled ledger lines, and one odometer reading. -->
+  <g stroke="#d7d2c7" stroke-width="2">
+    <line x1="8" y1="18" x2="56" y2="18"/>
+    <line x1="8" y1="46" x2="56" y2="46"/>
+  </g>
+  <text x="32" y="39" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace"
+        font-size="19" font-weight="600" fill="#16191d" letter-spacing="-0.5">
+    <tspan fill="#585349">10</tspan><tspan fill="#a0530a">6</tspan>
+  </text>
+</svg>

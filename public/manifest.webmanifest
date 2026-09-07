@@ -1,0 +1,14 @@
+{
+  "name": "Logbook",
+  "short_name": "Logbook",
+  "description": "Mileage, fuel and service log.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5f0",
+  "theme_color": "#f7f5f0",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
