@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { categories, mileageRates } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 
 export interface SettingsState {
   error?: string;
@@ -13,6 +14,7 @@ export interface SettingsState {
 
 export async function saveRate(_prev: SettingsState, form: FormData): Promise<SettingsState> {
   await requireAdmin();
+  await assertSameOrigin();
   const year = Number.parseInt(String(form.get("year") ?? ""), 10);
   const business = String(form.get("rateBusiness") ?? "").trim();
 
@@ -34,6 +36,7 @@ export async function saveRate(_prev: SettingsState, form: FormData): Promise<Se
 
 export async function saveCategory(_prev: SettingsState, form: FormData): Promise<SettingsState> {
   await requireAdmin();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "").trim();
   const code = String(form.get("code") ?? "").trim().toUpperCase();
   const name = String(form.get("name") ?? "").trim();
@@ -61,6 +64,7 @@ export async function saveCategory(_prev: SettingsState, form: FormData): Promis
 
 export async function archiveCategory(form: FormData): Promise<void> {
   await requireAdmin();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "");
   // Archived, never deleted: entries keep pointing at it, so the history of
   // what a row meant stays intact.

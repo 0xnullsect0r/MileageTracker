@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { vehicles } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 import {
   type MeterType,
   type ReadingPrecision,
@@ -50,6 +51,7 @@ function readForm(form: FormData) {
 
 export async function createVehicle(_prev: VehicleState, form: FormData): Promise<VehicleState> {
   await requireUser();
+  await assertSameOrigin();
   const values = readForm(form);
   if (!values.name) return { error: "Give the vehicle a name." };
 
@@ -60,6 +62,7 @@ export async function createVehicle(_prev: VehicleState, form: FormData): Promis
 
 export async function updateVehicle(_prev: VehicleState, form: FormData): Promise<VehicleState> {
   await requireUser();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "");
   const values = readForm(form);
   if (!values.name) return { error: "Give the vehicle a name." };
@@ -73,6 +76,7 @@ export async function updateVehicle(_prev: VehicleState, form: FormData): Promis
 
 export async function archiveVehicle(form: FormData): Promise<void> {
   await requireUser();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "");
   await db
     .update(vehicles)

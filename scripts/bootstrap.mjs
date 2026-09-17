@@ -10,10 +10,30 @@ import postgres from "postgres";
 const url = process.env.DATABASE_URL;
 const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
 const password = process.env.ADMIN_PASSWORD ?? "";
+const nodeEnv = process.env.NODE_ENV ?? "development";
+const sessionSecret = process.env.SESSION_SECRET ?? "";
 
 if (!url) {
   console.error("DATABASE_URL is not set");
   process.exit(1);
+}
+
+// The three defaults from .env.example. Booting production with any of
+// them still in place is a public-facing failure waiting to happen.
+const DEFAULTS = new Set(["change-me", "change-me-too", "you@example.com"]);
+if (nodeEnv === "production") {
+  const violations = [];
+  if (DEFAULTS.has(password)) violations.push("ADMIN_PASSWORD is the .env.example default");
+  if (DEFAULTS.has(email)) violations.push("ADMIN_EMAIL is the .env.example default");
+  if (DEFAULTS.has(sessionSecret) || sessionSecret.length < 32) {
+    violations.push("SESSION_SECRET is missing or too short (need 32+ chars; run `openssl rand -base64 48`)");
+  }
+  if (violations.length > 0) {
+    console.error("bootstrap: refusing to start with insecure defaults:");
+    for (const v of violations) console.error(`  - ${v}`);
+    console.error("Edit .env and restart. See README#Configuration.");
+    process.exit(1);
+  }
 }
 
 const sql = postgres(url, { max: 1 });

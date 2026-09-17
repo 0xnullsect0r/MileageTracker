@@ -12,6 +12,7 @@ import {
   revokeUserSessions,
   verifyPassword,
 } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 
 export interface PasswordState {
   error?: string;
@@ -23,6 +24,7 @@ export async function changePassword(
   form: FormData,
 ): Promise<PasswordState> {
   const me = await requireUser();
+  await assertSameOrigin();
   const current = String(form.get("current") ?? "");
   const next = String(form.get("next") ?? "");
   const confirm = String(form.get("confirm") ?? "");

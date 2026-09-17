@@ -11,6 +11,7 @@ import {
   requireAdmin,
   revokeUserSessions,
 } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 
 export interface AdminState {
   error?: string;
@@ -29,6 +30,7 @@ async function record(actorId: string, action: string, targetId: string, meta?: 
 
 export async function createUser(_prev: AdminState, form: FormData): Promise<AdminState> {
   const me = await requireAdmin();
+  await assertSameOrigin();
   const email = normaliseEmail(String(form.get("email") ?? ""));
   const name = String(form.get("name") ?? "").trim();
   const password = String(form.get("password") ?? "");
@@ -62,6 +64,7 @@ export async function createUser(_prev: AdminState, form: FormData): Promise<Adm
 
 export async function resetPassword(_prev: AdminState, form: FormData): Promise<AdminState> {
   const me = await requireAdmin();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "");
   const password = String(form.get("password") ?? "");
   const strength = checkPasswordStrength(password);
@@ -81,6 +84,7 @@ export async function resetPassword(_prev: AdminState, form: FormData): Promise<
 
 export async function setRole(form: FormData): Promise<void> {
   const me = await requireAdmin();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "");
   const role = String(form.get("role") ?? "USER") === "ADMIN" ? "ADMIN" : "USER";
 
@@ -96,6 +100,7 @@ export async function setRole(form: FormData): Promise<void> {
 
 export async function deleteUser(form: FormData): Promise<void> {
   const me = await requireAdmin();
+  await assertSameOrigin();
   const id = String(form.get("id") ?? "");
   if (id === me.id) return;
 

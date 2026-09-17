@@ -13,12 +13,14 @@ import {
   rateLimit,
   verifyPassword,
 } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 
 export interface LoginState {
   error?: string;
 }
 
 export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
+  await assertSameOrigin();
   const email = normaliseEmail(String(form.get("email") ?? ""));
   const password = String(form.get("password") ?? "");
   const next = String(form.get("next") ?? "/");

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { importBatches } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 import { getVehicle, listCategories, unitsOf } from "@/lib/data";
 import { commitImport, revertImport } from "@/lib/import/commit";
 import { type ParsedDocument, autoMap, detectShape } from "@/lib/import/mapping";
@@ -19,6 +20,7 @@ export interface UploadState {
 
 export async function uploadFile(_prev: UploadState, form: FormData): Promise<UploadState> {
   const user = await requireUser();
+  await assertSameOrigin();
   const file = form.get("file");
   const vehicleId = String(form.get("vehicleId") ?? "");
 
@@ -96,6 +98,7 @@ export async function loadDraft(batchId: string) {
 
 export async function saveDecision(batchId: string, decision: Decision): Promise<void> {
   await requireUser();
+  await assertSameOrigin();
   const rows = await db.select().from(importBatches).where(eq(importBatches.id, batchId)).limit(1);
   const batch = rows[0];
   if (!batch || batch.status !== "DRAFT") return;
@@ -134,6 +137,7 @@ export async function acceptAllSuggested(batchId: string): Promise<void> {
 
 export async function commitDraft(form: FormData): Promise<void> {
   const user = await requireUser();
+  await assertSameOrigin();
   const batchId = String(form.get("batchId") ?? "");
   const draft = await loadDraft(batchId);
   if (!draft) return;
@@ -156,6 +160,7 @@ export async function commitDraft(form: FormData): Promise<void> {
 
 export async function discardDraft(form: FormData): Promise<void> {
   await requireUser();
+  await assertSameOrigin();
   const batchId = String(form.get("batchId") ?? "");
   await db
     .delete(importBatches)
@@ -165,6 +170,7 @@ export async function discardDraft(form: FormData): Promise<void> {
 
 export async function undoImport(form: FormData): Promise<void> {
   await requireUser();
+  await assertSameOrigin();
   const batchId = String(form.get("batchId") ?? "");
   await revertImport(batchId);
   revalidatePath("/import");
