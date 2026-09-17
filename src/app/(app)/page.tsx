@@ -101,13 +101,27 @@ export default async function Dashboard() {
             </Stat>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link href={`/vehicles/${lead.vehicle.id}/entries/new`}>
               <Button variant="primary">Add entry</Button>
             </Link>
             <Link href={`/vehicles/${lead.vehicle.id}/entries`}>
               <Button>Open log</Button>
             </Link>
+            <a
+              href={`/reports/export?range=last-month&vehicle=${lead.vehicle.id}`}
+              className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
+            >
+              Download last month
+            </a>
+            {rest.length > 0 && (
+              <a
+                href="/reports/export?range=last-month&vehicle=all"
+                className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
+              >
+                Every vehicle
+              </a>
+            )}
           </div>
 
           {lead.needsReviewCount > 0 && (

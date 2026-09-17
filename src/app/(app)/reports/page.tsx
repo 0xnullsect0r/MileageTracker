@@ -80,12 +80,29 @@ export default async function ReportsPage({
             ))}
           </div>
         )}
-        <a
-          href={`/reports/export?year=${year}&vehicle=${vehicle.id}`}
-          className="ml-auto min-h-11 pt-3 text-sm text-ink-muted hover:text-ink"
-        >
-          Download CSV
-        </a>
+        <div className="ml-auto flex flex-wrap items-baseline gap-x-4 gap-y-1 pt-3">
+          <Label>Download</Label>
+          <a
+            href={`/reports/export?year=${year}&vehicle=${vehicle.id}`}
+            className="min-h-11 text-sm text-ink-muted hover:text-ink"
+          >
+            {year}
+          </a>
+          <a
+            href={`/reports/export?range=last-month&vehicle=${vehicle.id}`}
+            className="min-h-11 text-sm text-ink-muted hover:text-ink"
+          >
+            Last month
+          </a>
+          {all.length > 1 && (
+            <a
+              href={`/reports/export?range=last-month&vehicle=all`}
+              className="min-h-11 text-sm text-ink-muted hover:text-ink"
+            >
+              Last month · every vehicle
+            </a>
+          )}
+        </div>
       </div>
 
       <Rule className="my-6 print:hidden" />
