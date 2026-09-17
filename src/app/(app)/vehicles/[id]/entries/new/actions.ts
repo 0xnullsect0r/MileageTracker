@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { entries } from "@/db/schema";
+import { categories, entries } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { assertSameOrigin } from "@/lib/http";
 import { getVehicle, unitsOf } from "@/lib/data";
 import { ReadingParseError, parseReading } from "@/lib/units";
+import { eq } from "drizzle-orm";
+import { completeCrossedReminders } from "@/app/(app)/vehicles/[id]/service/actions";
 
 export interface EntryState {
   error?: string;
@@ -14,6 +17,7 @@ export interface EntryState {
 
 export async function createEntry(_prev: EntryState, form: FormData): Promise<EntryState> {
   const user = await requireUser();
+  await assertSameOrigin();
   const vehicleId = String(form.get("vehicleId") ?? "");
   const vehicle = await getVehicle(vehicleId);
   if (!vehicle) return { error: "Vehicle not found." };
@@ -51,21 +55,37 @@ export async function createEntry(_prev: EntryState, form: FormData): Promise<En
   else if (qty && cost && !price) price = (Number(cost) / Number(qty)).toFixed(4);
   else if (price && cost && !qty) qty = (Number(cost) / Number(price)).toFixed(3);
 
-  await db.insert(entries).values({
-    vehicleId,
-    categoryId,
-    occurredOn,
-    readingTicks,
-    description: description || null,
-    fuelQty: qty,
-    fuelPricePerUnit: price,
-    cost,
-    isPartialFill: form.get("isPartialFill") === "on",
-    odometerReset: form.get("odometerReset") === "on",
-    createdBy: user.id,
-  });
+  const [inserted] = await db
+    .insert(entries)
+    .values({
+      vehicleId,
+      categoryId,
+      occurredOn,
+      readingTicks,
+      description: description || null,
+      fuelQty: qty,
+      fuelPricePerUnit: price,
+      cost,
+      isPartialFill: form.get("isPartialFill") === "on",
+      odometerReset: form.get("odometerReset") === "on",
+      createdBy: user.id,
+    })
+    .returning({ id: entries.id });
+
+  // A SERVICE entry crossing a reminder's target closes that reminder.
+  if (inserted && readingTicks !== null) {
+    const [cat] = await db
+      .select({ kind: categories.kind })
+      .from(categories)
+      .where(eq(categories.id, categoryId))
+      .limit(1);
+    if (cat?.kind === "SERVICE") {
+      await completeCrossedReminders(vehicleId, inserted.id, readingTicks);
+    }
+  }
 
   revalidatePath(`/vehicles/${vehicleId}/entries`);
+  revalidatePath(`/vehicles/${vehicleId}/service`);
   revalidatePath("/");
   redirect(`/vehicles/${vehicleId}/entries`);
 }

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { CategoryMark, categoryBorder } from "@/components/Category";
 import { Num, Reading } from "@/components/Reading";
+import { ReminderForm } from "@/components/ReminderForm";
+import { ReminderRow } from "@/components/ReminderRow";
 import { Label, Rule } from "@/components/ui";
 import { db } from "@/db";
 import { serviceReminders } from "@/db/schema";
@@ -65,35 +67,26 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
                     : null;
 
               return (
-                <div key={r.id} className="border-b border-rule py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span className="text-sm">{r.description}</span>
-                    <span
-                      className="num shrink-0 text-sm"
-                      style={overdue ? { color: "var(--signal)", fontWeight: 600 } : undefined}
-                    >
-                      {remaining !== null
-                        ? overdue
-                          ? `overdue by ${formatReading(Math.abs(remaining), units)} ${unitLabel(units)}`
-                          : `${formatReading(remaining, units)} ${unitLabel(units)} to go`
-                        : r.dueOn
-                          ? overdueByDate ? `overdue since ${r.dueOn}` : `due ${r.dueOn}`
-                          : "—"}
-                    </span>
-                  </div>
-                  {progress !== null && (
-                    <div className="mt-2 h-px w-full bg-rule">
-                      <div
-                        className="h-px"
-                        style={{ width: `${progress}%`, background: overdue ? "var(--signal)" : "var(--ink-muted)" }}
-                      />
-                    </div>
-                  )}
-                </div>
+                <ReminderRow
+                  key={r.id}
+                  id={r.id}
+                  description={r.description}
+                  remaining={remaining}
+                  overdue={overdue}
+                  overdueByDate={overdueByDate}
+                  dueOn={r.dueOn}
+                  units={units}
+                  progress={progress}
+                />
               );
             })}
           </div>
         )}
+      </section>
+
+      <section className="mt-10 max-w-2xl">
+        <Label>Add a reminder</Label>
+        <ReminderForm vehicleId={id} units={units} />
       </section>
 
       <section className="mt-10">
