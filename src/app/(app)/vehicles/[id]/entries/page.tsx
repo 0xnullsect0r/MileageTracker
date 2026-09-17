@@ -80,6 +80,7 @@ export default async function EntriesPage({
         units={units}
         categories={cats.map((c) => ({ code: c.code, name: c.name, kind: c.kind }))}
         initialReviewOnly={review === "1"}
+        linkFor={(entryId) => `/vehicles/${id}/entries/${entryId}`}
       />
     </main>
   );

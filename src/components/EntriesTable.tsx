@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { CategoryMark, categoryBorder, type CategoryLike } from "@/components/Category";
@@ -39,11 +40,14 @@ export function EntriesTable({
   units,
   categories,
   initialReviewOnly = false,
+  linkFor,
 }: {
   rows: TableRow[];
   units: VehicleUnits;
   categories: CategoryLike[];
   initialReviewOnly?: boolean;
+  /** When set, the description cell links here — the entry detail page. */
+  linkFor?: (entryId: string) => string;
 }) {
   const [query, setQuery] = useState("");
   const [year, setYear] = useState<string>("all");
@@ -237,7 +241,13 @@ export function EntriesTable({
                       {category.code}
                     </span>
                   )}
-                  {r.description}
+                  {linkFor ? (
+                    <Link href={linkFor(r.id)} className="hover:text-signal">
+                      {r.description ?? <span className="text-ink-muted">Details</span>}
+                    </Link>
+                  ) : (
+                    r.description
+                  )}
                 </span>
                 <Cell value={r.pricePerUnit} dp={3} prefix="$" />
                 <Cell value={r.fuelQty} dp={3} />

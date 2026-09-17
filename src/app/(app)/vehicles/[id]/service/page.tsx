@@ -96,9 +96,10 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
         ) : (
           <div className="mt-3 max-w-3xl">
             {history.map((e) => (
-              <div
+              <Link
                 key={e.id}
-                className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule py-2 pl-3"
+                href={`/vehicles/${id}/entries/${e.id}`}
+                className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule py-2 pl-3 hover:bg-paper-raised"
                 style={categoryBorder(e.category)}
               >
                 <span className="num w-24 shrink-0 text-[0.8125rem] text-ink-muted">{e.occurredOn}</span>
@@ -106,7 +107,7 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
                 <Reading ticks={e.readingTicks} units={units} size="sm" />
                 <span className="min-w-0 flex-1 text-sm">{e.description}</span>
                 {e.cost !== null && <Num value={e.cost} prefix="$" className="text-[0.8125rem]" />}
-              </div>
+              </Link>
             ))}
           </div>
         )}
