@@ -1,0 +1,113 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  # Every migration in ./drizzle applies cleanly against a real Postgres,
+  # end to end. Catches a `db:generate` diff someone forgot to commit.
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: logbook
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: logbook
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U logbook -d logbook"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DATABASE_URL: postgres://logbook:ci@localhost:5432/logbook
+      ADMIN_EMAIL: ci@example.com
+      ADMIN_PASSWORD: change-me-ci-does-not-care
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: node scripts/bootstrap.mjs
+      # Second boot must be a no-op — bootstrap is expected to be idempotent.
+      - run: node scripts/bootstrap.mjs
+
+  # Every hard ban in CLAUDE.md is grep-detectable at the source level. Keep
+  # them here so a regression doesn't ship through a review someone skimmed.
+  design-tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: no purple/violet/indigo brand colors
+        run: |
+          if grep -RIE --include='*.tsx' --include='*.ts' --include='*.css' \
+              -e '#7c3aed|#8b5cf6|#a855f7|#6366f1' src/; then
+            echo "::error::CLAUDE.md forbids purple/violet/indigo as brand color."
+            exit 1
+          fi
+      - name: no gradient utility classes
+        run: |
+          if grep -RIE --include='*.tsx' --include='*.ts' \
+              -e 'bg-gradient-|from-(purple|violet|indigo|blue|pink|fuchsia)-' src/; then
+            echo "::error::CLAUDE.md forbids default AI gradient palettes."
+            exit 1
+          fi
+      - name: no emoji in headings
+        run: |
+          # A crude but sufficient check: any emoji glyph appearing inside a
+          # heading element. Real iconography lives in Category / marks.
+          if grep -RIn --include='*.tsx' -P '<h[1-6][^>]*>[^<]*[\x{1F000}-\x{1FFFF}]' src/; then
+            echo "::error::CLAUDE.md forbids emoji in headings."
+            exit 1
+          fi
+
+  # A build isn't shipped by CI, but confirming the images still build is
+  # the cheapest way to catch a broken Dockerfile before a release.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: build app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: build parser image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./parser
+          push: false
+          cache-from: type=gha,scope=parser
+          cache-to: type=gha,mode=max,scope=parser
