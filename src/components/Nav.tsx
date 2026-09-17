@@ -33,6 +33,9 @@ export function Nav({ user }: { user: SessionUser }) {
               <Link href="/admin/settings" className={`${TAP} text-sm text-ink-muted hover:text-ink`}>
                 Settings
               </Link>
+              <Link href="/admin/audit" className={`${TAP} text-sm text-ink-muted hover:text-ink`}>
+                Audit
+              </Link>
             </>
           )}
         </nav>
