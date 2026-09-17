@@ -153,6 +153,88 @@ export default function Styleguide() {
           <Stat label="Entries"><Num value={3338} dp={0} /></Stat>
         </div>
       </Section>
+
+      <Section title="Reminder row" note="One hairline. Progress fills toward the target — no card, no shadow.">
+        <div className="max-w-2xl">
+          <div className="border-b border-rule py-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <span className="text-sm">Oil change</span>
+              <span className="num shrink-0 text-sm">2,400 mi to go</span>
+            </div>
+            <div className="mt-2 h-px w-full bg-rule">
+              <div className="h-px" style={{ width: "62%", background: "var(--ink-muted)" }} />
+            </div>
+            <div className="mt-2 flex gap-4 text-[0.75rem]">
+              <button className="min-h-8 text-ink-muted">Mark done</button>
+              <button className="min-h-8 text-ink-muted">Delete</button>
+            </div>
+          </div>
+          <div className="border-b border-rule py-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <span className="text-sm">Timing belt</span>
+              <span className="num shrink-0 text-sm" style={{ color: "var(--signal)", fontWeight: 600 }}>
+                overdue by 1,200 mi
+              </span>
+            </div>
+            <div className="mt-2 h-px w-full bg-rule">
+              <div className="h-px" style={{ width: "100%", background: "var(--signal)" }} />
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Attachment row" note="A single ruled line. The download link takes the row; delete is quiet.">
+        <ul className="max-w-2xl">
+          <li className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule py-3">
+            <span className="min-w-0 flex-1 truncate text-sm">receipt-shell-05-nov.pdf</span>
+            <span className="num shrink-0 text-[0.75rem] text-ink-muted">184 KB</span>
+            <span className="num shrink-0 text-[0.75rem] text-ink-muted">2024-11-05</span>
+            <button className="min-h-8 shrink-0 text-[0.75rem] text-ink-muted">Delete</button>
+          </li>
+          <li className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule py-3">
+            <span className="min-w-0 flex-1 truncate text-sm">timing-belt-invoice.jpg</span>
+            <span className="num shrink-0 text-[0.75rem] text-ink-muted">2.1 MB</span>
+            <span className="num shrink-0 text-[0.75rem] text-ink-muted">2025-03-12</span>
+            <button className="min-h-8 shrink-0 text-[0.75rem] text-ink-muted">Delete</button>
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="Audit row" note="Fixed columns, monospace where it earns it: time, ids, action, meta.">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[48rem] text-[0.8125rem]">
+            <thead>
+              <tr className="border-b border-rule text-left text-[0.75rem] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                <th className="py-2 font-semibold">When</th>
+                <th className="py-2 font-semibold">Actor</th>
+                <th className="py-2 font-semibold">Action</th>
+                <th className="py-2 font-semibold">Target</th>
+                <th className="py-2 font-semibold">Meta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-rule align-top">
+                <td className="num py-1.5 pr-4">2026-09-17 08:11:42</td>
+                <td className="py-1.5 pr-4">Ari</td>
+                <td className="num py-1.5 pr-4">reminder.create</td>
+                <td className="num py-1.5 pr-4 text-ink-muted">service_reminder · a1b2c3d4</td>
+                <td className="py-1.5 text-ink-muted">
+                  <code className="text-[0.75rem]">{"{\"description\":\"Oil change\"}"}</code>
+                </td>
+              </tr>
+              <tr className="border-b border-rule align-top">
+                <td className="num py-1.5 pr-4">2026-09-17 08:12:07</td>
+                <td className="py-1.5 pr-4">Ari</td>
+                <td className="num py-1.5 pr-4">attachment.create</td>
+                <td className="num py-1.5 pr-4 text-ink-muted">attachment · e5f6g7h8</td>
+                <td className="py-1.5 text-ink-muted">
+                  <code className="text-[0.75rem]">{"{\"mime\":\"application/pdf\",\"size\":184320}"}</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Section>
     </main>
   );
 }

@@ -83,12 +83,30 @@ jobs:
           fi
       - name: no emoji in headings
         run: |
-          # A crude but sufficient check: any emoji glyph appearing inside a
-          # heading element. Real iconography lives in Category / marks.
-          if grep -RIn --include='*.tsx' -P '<h[1-6][^>]*>[^<]*[\x{1F000}-\x{1FFFF}]' src/; then
-            echo "::error::CLAUDE.md forbids emoji in headings."
-            exit 1
-          fi
+          # A crude but sufficient check: any codepoint above U+2600 (which
+          # covers dingbats, arrows, symbols, and every emoji block) sitting
+          # inside a heading element. Real iconography lives in Category /
+          # marks. Runs in Node so the regex doesn't depend on grep -P
+          # supporting 5-hex-digit escapes.
+          node --input-type=module -e '
+            import fs from "node:fs";
+            import path from "node:path";
+            function walk(dir) {
+              for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const p = path.join(dir, e.name);
+                if (e.isDirectory()) yield* walk(p);
+                else if (p.endsWith(".tsx")) yield p;
+              }
+            }
+            const bad = /<h[1-6][^>]*>[^<]*[\u{2600}-\u{1FFFF}]/u;
+            let hits = 0;
+            for (const p of walk("src")) {
+              const txt = fs.readFileSync(p, "utf8");
+              const m = txt.match(bad);
+              if (m) { hits++; console.log(p + ": " + m[0]); }
+            }
+            if (hits) { console.log("::error::CLAUDE.md forbids emoji in headings."); process.exit(1); }
+          '
 
   # A build isn't shipped by CI, but confirming the images still build is
   # the cheapest way to catch a broken Dockerfile before a release.
