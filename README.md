@@ -24,10 +24,22 @@ Runs as one `docker compose` stack behind your existing reverse proxy.
   silently, and the whole import can be undone.
 - **Accounts.** Everyone signed in shares the garage. Administrators add and
   remove people and reset passwords; a reset ends that person's sessions
-  immediately.
+  immediately. `/account/password` has a "sign out everywhere" button for
+  the lost-phone case.
 - **Editable categories and tax rates.** `/admin/settings` adds or renames
   categories — each tagged with the behaviour it drives — and corrects the
   IRS rate for any year.
+- **Service reminders.** Add reminders on the service page with either a
+  reading target or a date; the dashboard rail shows what's due. A SERVICE
+  entry whose reading crosses a reminder's target closes it automatically.
+- **Attachments.** Any entry accepts JPEG, PNG, WebP or PDF receipts, up
+  to 10 MB per file. MIME is set from a server-side magic-byte sniff, not
+  the client's claim.
+- **Audit trail.** `/admin/audit` lists every mutation the app makes,
+  paginated and filterable by actor, action or date. Read-only.
+- **CSV export.** `/reports/export` produces an itemised CSV for one
+  vehicle or all vehicles, over a calendar year, the previous month, or an
+  explicit `from`/`to` range.
 
 ## Running it
 
@@ -127,3 +139,14 @@ The suite runs against a fixture taken from the actual spreadsheet, so the
 numbers it asserts are measured rather than invented. The strongest check
 reconciles every dollar of fuel across ten years to within two cents: each is
 either imported or deliberately skipped, and the test says which.
+
+## Operations, backups, upgrades
+
+- `docs/OPERATIONS.md` — reverse-proxy configs (Caddy, nginx), env-var
+  reference, log-shipping options, a quick-triage runbook.
+- `docs/BACKUPS.md` — daily backup script, restore recipe, monthly
+  restore drill.
+- `docs/UPGRADING.md` — how migrations run at boot, how to regenerate
+  them, when a rollback is safe and when it isn't.
+- `SECURITY.md` — what the app trusts, what it doesn't, the measures in
+  place, and how to report a vulnerability.
