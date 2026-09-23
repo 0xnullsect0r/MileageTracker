@@ -1,5 +1,10 @@
-# Development overlay. Opt-in, never applied by default:
+# Development overlay. Opt-in, never applied by default.
+#
+# Postgres and the parser for `pnpm dev`:
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db parser
+#
+# The whole stack, built from this checkout instead of pulled from GHCR:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 #
 # It publishes Postgres and the parser on the host so `pnpm dev` can reach
 # them. The production compose deliberately publishes neither.
@@ -8,5 +13,18 @@ services:
     ports:
       - "55432:5432"
   parser:
+    image: mileagetracker-parser:dev
+    build: ./parser
+    pull_policy: build
+    labels: !reset []
     ports:
       - "58000:8000"
+  app:
+    image: mileagetracker:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: build
+    labels: !reset []
+  watchtower:
+    profiles: ["never"]

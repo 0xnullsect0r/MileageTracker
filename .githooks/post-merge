@@ -1,0 +1,17 @@
+#!/bin/sh
+# Applies compose changes after `git pull`. Enable once per checkout:
+#   git config core.hooksPath .githooks
+#
+# New code arrives through watchtower, not here. This only reacts when the
+# pull changed how the stack is wired: docker-compose.yml or these hooks.
+cd "$(git rev-parse --show-toplevel)" || exit 0
+
+changed=$(git diff --name-only ORIG_HEAD HEAD -- docker-compose.yml .githooks 2>/dev/null)
+[ -n "$changed" ] || exit 0
+
+echo "logbook: compose changed, applying with docker compose up -d"
+if ! docker compose up -d --remove-orphans; then
+  echo "logbook: docker compose failed; the pull itself succeeded." >&2
+  echo "logbook: run 'docker compose up -d --remove-orphans' by hand." >&2
+fi
+exit 0

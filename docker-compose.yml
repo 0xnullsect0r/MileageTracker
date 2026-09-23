@@ -16,8 +16,11 @@ services:
     # No published port: only the app reaches it, over the compose network.
 
   parser:
-    build: ./parser
+    image: ghcr.io/0xnullsect0r/mileagetracker-parser:${IMAGE_TAG:-latest}
+    pull_policy: always
     restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     environment:
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-32}
     # Parses untrusted uploads, so: no volumes, no DB, no network exposure,
@@ -37,10 +40,11 @@ services:
       retries: 10
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/0xnullsect0r/mileagetracker:${IMAGE_TAG:-latest}
+    pull_policy: always
     restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     depends_on:
       db:
         condition: service_healthy
@@ -68,6 +72,23 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
+
+  # Follows the images the Release workflow publishes. Every few minutes it
+  # checks GHCR, and when :latest has moved it pulls it and recreates the
+  # container with its existing settings. Only containers labelled above are
+  # touched: never Postgres, never anything else on the host. Changes to this
+  # file are not its job; `git pull` applies those (see README, Updates).
+  watchtower:
+    image: nickfedor/watchtower:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-300}
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      TZ: ${TZ:-America/New_York}
 
 volumes:
   pgdata:

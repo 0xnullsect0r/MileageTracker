@@ -1,0 +1,21 @@
+# Build context for the app image. The parser has its own context (./parser).
+.git
+.github
+.githooks
+node_modules
+.next
+out
+build
+.env
+.env*
+!.env.example
+*.numbers
+tests
+e2e
+playwright-report
+test-results
+review-screenshots
+parser
+docker-compose*.yml
+*.tsbuildinfo
+.DS_Store

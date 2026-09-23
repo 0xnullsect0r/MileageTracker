@@ -32,9 +32,14 @@ Runs as one `docker compose` stack behind your existing reverse proxy.
 ## Running it
 
 ```sh
+git clone https://github.com/0xnullsect0r/MileageTracker.git && cd MileageTracker
 cp .env.example .env      # then edit it — every value marked change-me
+git config core.hooksPath .githooks   # lets `git pull` apply compose changes
 docker compose up -d
 ```
+
+The images come prebuilt from GitHub Container Registry; nothing is compiled
+on the server.
 
 Then point your reverse proxy at `APP_PORT` (3000 by default) and sign in
 with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. You are made to choose your own
@@ -54,6 +59,53 @@ and only on the one port your proxy needs.
 | `TRUST_PROXY` | `true` when something else terminates TLS. Default `true`. |
 | `COOKIE_SECURE` | Set `false` only for plain HTTP on a trusted LAN. |
 | `MAX_UPLOAD_MB` | Upload ceiling. Default `32`. |
+| `IMAGE_TAG` | Image version to run. Default `latest`; see [Updates](#updates). |
+| `WATCHTOWER_POLL_INTERVAL` | Seconds between checks for a new release. Default `300`. |
+
+## Updates
+
+Two kinds of change reach a running server, by two routes.
+
+**New code** arrives on its own. Pushing a version tag runs the Release
+workflow: typecheck and tests, then both images are built and published to
+GHCR and a GitHub Release is cut.
+
+```sh
+git tag v1.2.3 && git push origin v1.2.3
+```
+
+The `watchtower` service checks GHCR every five minutes. When `:latest` has
+moved, it pulls the new image, recreates `app` and `parser` with their
+existing settings, and deletes the old image. It never touches Postgres.
+Migrations run as the new `app` starts, so a release can change the schema —
+take a `pg_dump` first if you want a way back.
+
+Pre-release tags (`v1.3.0-rc.1`) are published under their version only and
+do not move `:latest`, so they never reach a server that follows it.
+
+**Changes to `docker-compose.yml`** — a new setting, a new service — are
+not watchtower's job. `git pull` brings them in, and the hook enabled by
+`git config core.hooksPath .githooks` runs `docker compose up -d` whenever a
+pull changed that file. Without the hook, run it yourself after pulling.
+
+**To pin or roll back**, set `IMAGE_TAG` in `.env` to a published version
+(`1.2.3`) or build (`sha-abc1234`) and run `docker compose up -d`. A pinned
+tag never moves, so watchtower leaves it alone until you set it back to
+`latest`.
+
+### Moving an existing install to published images
+
+Earlier versions built the images on the server. Once the first release has
+been published, run this from the same checkout, so the project name and
+therefore the data volumes stay the same:
+
+```sh
+docker compose exec db pg_dump -U logbook logbook > backup.sql
+git pull
+git config core.hooksPath .githooks
+docker compose up -d --remove-orphans
+docker image prune -f      # the old locally built images
+```
 
 ## The three services
 
@@ -107,6 +159,14 @@ export PARSER_URL="http://localhost:58000"
 pnpm exec tsx src/db/migrate.ts && node scripts/bootstrap.mjs
 pnpm dev
 ```
+
+To run the whole stack from this checkout rather than from GHCR:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+The overlay builds both images locally and leaves watchtower out.
 
 `/styleguide` renders every token and primitive on one page.
 
