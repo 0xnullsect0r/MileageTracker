@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EconomyChart, type EconomyPoint } from "@/components/EconomyChart";
 import { Num } from "@/components/Reading";
-import { Label, Rule, Stat } from "@/components/ui";
+import { Label, Stat } from "@/components/ui";
 import { getVehicle, loadLog, unitsOf } from "@/lib/data";
 import { fillGroups, withDistances } from "@/lib/derive";
 import { formatReading, ticksToUnits, unitLabel } from "@/lib/units";
@@ -34,20 +33,8 @@ export default async function FuelPage({ params }: { params: Promise<{ id: strin
   const totalSpend = groups.reduce((a, g) => a + g.cost, 0);
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Label>{vehicle.name}</Label>
-          <h1 className="mt-1 text-[2rem] font-semibold tracking-tight">Fuel</h1>
-        </div>
-        <div className="flex gap-5">
-          <Link href={`/vehicles/${id}/entries`} className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink">Log</Link>
-          <Link href={`/vehicles/${id}/service`} className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink">Service</Link>
-        </div>
-      </div>
-
-      <Rule className="mt-6" />
-
+    <main className="mx-auto max-w-[1400px] px-4 pb-10 pt-6 sm:px-8">
+      <h2 className="sr-only">Fuel</h2>
       <EconomyChart data={points} unit={unitLabel(units)} />
 
       <div className="mt-8 grid grid-cols-2 gap-6 border-t border-rule pt-6 sm:grid-cols-5">
@@ -70,7 +57,36 @@ export default async function FuelPage({ params }: { params: Promise<{ id: strin
           it belongs to, which is why these figures are steadier than the per-receipt numbers in
           the spreadsheet.
         </p>
-        <div className="-mx-4 mt-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        {/* Phone: a two-line row per tank, economy leading — the table's six
+            columns will not fit at 375px without hiding the one that matters. */}
+        <ul className="mt-4 sm:hidden">
+          {[...groups].reverse().slice(0, 200).map((g) => (
+            <li key={g.closedBy.id} className="border-b border-rule py-2">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="num text-[0.8125rem] text-ink-muted">{g.closedBy.occurredOn}</span>
+                {g.economyTicksPerUnit === null ? (
+                  <span className="num text-ink-muted">—</span>
+                ) : (
+                  <span className="num computed px-1 text-base">
+                    {ticksToUnits(g.economyTicksPerUnit, units).toFixed(1)}
+                    <span className="ml-1 text-[0.8125rem] text-ink-muted">{unitLabel(units)}/gal</span>
+                  </span>
+                )}
+              </div>
+              <div className="num mt-0.5 flex gap-4 text-[0.8125rem] text-ink-muted">
+                <span>{formatReading(g.distanceTicks, units)} {unitLabel(units)}</span>
+                <span>{g.fuelQty.toFixed(3)} gal</span>
+                <span className="ml-auto text-ink">${g.cost.toFixed(2)}</span>
+              </div>
+              {(g.excludedReason || g.fills.length > 1) && (
+                <p className="mt-0.5 text-[0.8125rem] text-ink-muted">
+                  {g.excludedReason ?? `${g.fills.length} fill-ups in this tank`}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 hidden overflow-x-auto sm:block">
         <table className="w-full min-w-[38rem] text-[0.8125rem]">
           <thead>
             <tr className="border-b border-rule text-left text-[0.75rem] font-semibold uppercase tracking-[0.06em] text-ink-muted">

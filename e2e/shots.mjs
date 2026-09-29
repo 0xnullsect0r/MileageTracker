@@ -35,11 +35,28 @@ for (const width of WIDTHS) {
   for (const [name, path] of [
     ["dashboard", "/"],
     ["styleguide", "/styleguide"],
-    ...(vehicleId ? [["entries", `/vehicles/${vehicleId}/entries`]] : []),
+    ...(vehicleId
+      ? [
+          ["entries", `/vehicles/${vehicleId}/entries`],
+          ["fuel", `/vehicles/${vehicleId}/fuel`],
+          ["service", `/vehicles/${vehicleId}/service`],
+          ["docs", `/vehicles/${vehicleId}/docs`],
+          ["add", `/vehicles/${vehicleId}/entries/new`],
+        ]
+      : []),
   ]) {
     await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
     await page.waitForTimeout(400);
     await page.screenshot({ path: `review-screenshots/${name}-${width}.png` });
+  }
+
+  // The phone's vehicle sheet, opened from the bottom bar.
+  if (vehicleId && width < 768) {
+    await page.goto(`${BASE}/vehicles/${vehicleId}/service`, { waitUntil: "networkidle" });
+    await page.locator('nav[aria-label="Vehicle"] button').click();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `review-screenshots/vehicle-sheet-${width}.png` });
+    await page.keyboard.press("Escape");
   }
 
   // Horizontal overflow is a hard failure of the design brief.

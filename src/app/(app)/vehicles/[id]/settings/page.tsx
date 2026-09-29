@@ -12,10 +12,9 @@ export default async function VehicleSettings({ params }: { params: Promise<{ id
   if (!v) notFound();
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-8">
-      <h1 className="text-[2rem] font-semibold tracking-tight">{v.name}</h1>
-      <Rule className="mt-6 max-w-2xl" />
-      <div className="mt-8">
+    <main className="mx-auto max-w-[1400px] px-4 pb-12 pt-6 sm:px-8">
+      <h2 className="sr-only">Settings</h2>
+      <div>
         <VehicleForm
           defaults={{
             id: v.id,
@@ -30,6 +29,8 @@ export default async function VehicleSettings({ params }: { params: Promise<{ id
             fuelUnit: v.fuelUnit,
             tankCapacity: v.tankCapacity ?? "",
             notes: v.notes ?? "",
+            color: v.color ?? "",
+            photoId: v.photoAttachmentId,
           }}
         />
       </div>

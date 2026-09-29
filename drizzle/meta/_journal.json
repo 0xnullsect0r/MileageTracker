@@ -15,6 +15,13 @@
       "when": 1788771687656,
       "tag": "0001_silly_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790652184444,
+      "tag": "0002_slippery_ego",
+      "breakpoints": true
     }
   ]
 }

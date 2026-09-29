@@ -6,13 +6,16 @@ import {
   updateVehicle,
   type VehicleState,
 } from "@/app/(app)/vehicles/actions";
+import { VehicleMark } from "@/components/VehicleMark";
 import { Button, Field, Label, Rule, inputClass } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import {
   type MeterType,
   type ReadingPrecision,
   allowedPrecisions,
   formatReading,
 } from "@/lib/units";
+import { VEHICLE_COLORS, VEHICLE_COLOR_LABEL, vehicleColor } from "@/lib/vehicle-colors";
 
 const PRECISION_LABEL: Record<ReadingPrecision, string> = {
   WHOLE: "Whole",
@@ -33,6 +36,8 @@ export interface VehicleDefaults {
   fuelUnit: string;
   tankCapacity: string;
   notes: string;
+  color: string;
+  photoId: string | null;
 }
 
 export function VehicleForm({ defaults }: { defaults: VehicleDefaults }) {
@@ -44,6 +49,8 @@ export function VehicleForm({ defaults }: { defaults: VehicleDefaults }) {
   const [meterType, setMeterType] = useState<MeterType>(defaults.meterType);
   const [precision, setPrecision] = useState<ReadingPrecision>(defaults.readingPrecision);
   const [distanceUnit, setDistanceUnit] = useState(defaults.distanceUnit);
+  const [color, setColor] = useState(defaults.color);
+  const [photoName, setPhotoName] = useState<string | null>(null);
 
   const allowed = allowedPrecisions(meterType);
   const effective = allowed.includes(precision) ? precision : "WHOLE";
@@ -67,6 +74,49 @@ export function VehicleForm({ defaults }: { defaults: VehicleDefaults }) {
         <Field label="Make"><input className={inputClass} name="make" defaultValue={defaults.make} /></Field>
         <Field label="Model"><input className={inputClass} name="model" defaultValue={defaults.model} /></Field>
         <Field label="Plate"><input className={inputClass} name="plate" defaultValue={defaults.plate} /></Field>
+      </div>
+
+      <Rule className="my-8" />
+      <fieldset>
+        <legend className="block text-[0.75rem] font-semibold uppercase tracking-[0.06em] text-ink-muted">Colour</legend>
+        <p className="mt-1 text-sm text-ink-muted">Tells it apart in the vehicle switcher and on the garage page.</p>
+        <input type="hidden" name="color" value={color} />
+        <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Colour">
+          {VEHICLE_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={color === c}
+              aria-label={VEHICLE_COLOR_LABEL[c]}
+              title={VEHICLE_COLOR_LABEL[c]}
+              onClick={() => setColor(color === c ? "" : c)}
+              className={cn(
+                "inline-flex size-11 items-center justify-center rounded-[2px] border",
+                color === c ? "border-ink" : "border-transparent hover:border-rule",
+              )}
+            >
+              <span className="size-6 rounded-[1px]" style={{ background: vehicleColor(c) }} />
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="mt-6">
+        <Label>Photo</Label>
+        <div className="mt-2 flex items-center gap-4">
+          {defaults.photoId && <VehicleMark color={color || null} photoId={defaults.photoId} size="lg" />}
+          <label className="flex min-h-11 flex-1 cursor-pointer items-center border-b border-rule text-sm text-ink-muted hover:text-ink focus-within:border-signal">
+            <span className="truncate">{photoName ?? (defaults.photoId ? "Replace photo" : "Choose a photo")}</span>
+            <input type="file" name="photo" accept="image/*" className="sr-only" onChange={(e) => setPhotoName(e.target.files?.[0]?.name ?? null)} />
+          </label>
+        </div>
+        {defaults.photoId && (
+          <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-ink-muted">
+            <input type="checkbox" name="removePhoto" className="size-5 accent-[var(--signal)]" />
+            Remove the photo
+          </label>
+        )}
       </div>
 
       <Rule className="my-8" />

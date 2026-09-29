@@ -58,20 +58,28 @@ export function Stat({
 const BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-[2px] px-4 min-h-11 text-[0.9375rem] font-semibold transition-colors duration-100 disabled:opacity-50 disabled:pointer-events-none";
 
+type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+
+const BUTTON_STYLES: Record<ButtonVariant, string> = {
+  primary: "bg-signal text-paper hover:brightness-110",
+  secondary: "border border-ink text-ink hover:bg-ink hover:text-paper",
+  quiet: "text-ink-muted hover:text-ink",
+  danger: "text-ink-muted hover:text-signal border border-rule hover:border-signal",
+};
+
+/** Button styling for a link, so a link never has to wrap a <button>. */
+export function buttonClass(variant: ButtonVariant = "secondary", className?: string): string {
+  return cn(BUTTON_BASE, BUTTON_STYLES[variant], className);
+}
+
 export function Button({
   variant = "secondary",
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "quiet" | "danger";
+  variant?: ButtonVariant;
 }) {
-  const styles = {
-    primary: "bg-signal text-paper hover:brightness-110",
-    secondary: "border border-ink text-ink hover:bg-ink hover:text-paper",
-    quiet: "text-ink-muted hover:text-ink",
-    danger: "text-ink-muted hover:text-signal border border-rule hover:border-signal",
-  }[variant];
-  return <button className={cn(BUTTON_BASE, styles, className)} {...props} />;
+  return <button className={buttonClass(variant, className)} {...props} />;
 }
 
 /** Bottom-border-only fields: filling into paper, not into a card. */

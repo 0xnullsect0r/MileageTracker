@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { CategoryMark, categoryBorder, type CategoryLike } from "@/components/Category";
 import { cn } from "@/lib/cn";
@@ -35,11 +36,13 @@ const ROW_DESKTOP = 36;
 const ROW_TOUCH = 44; // meets the 44px tap target on small screens
 
 export function EntriesTable({
+  vehicleId,
   rows,
   units,
   categories,
   initialReviewOnly = false,
 }: {
+  vehicleId: string;
   rows: TableRow[];
   units: VehicleUnits;
   categories: CategoryLike[];
@@ -166,7 +169,7 @@ export function EntriesTable({
         <span className="hidden text-right lg:block">{unitLabel(units)}/gal</span>
       </div>
 
-      <div ref={parentRef} className="h-[calc(100dvh-320px)] min-h-96 overflow-auto">
+      <div ref={parentRef} className="h-[calc(100dvh-420px)] min-h-96 overflow-auto md:h-[calc(100dvh-360px)]">
         <div style={{ height: virt.getTotalSize(), position: "relative" }}>
           {virt.getVirtualItems().map((item) => {
             const r = filtered[item.index]!;
@@ -186,10 +189,12 @@ export function EntriesTable({
             const split = value === null ? null : splitChangedDigits(value, reference);
 
             return (
-              <div
+              // Each row is a link to its edit page: the whole row is the tap target.
+              <Link
                 key={r.id}
+                href={`/vehicles/${vehicleId}/entries/${r.id}`}
                 className={cn(
-                  "absolute left-0 top-0 grid w-full items-baseline gap-x-3 border-b border-rule py-1.5 pl-2",
+                  "absolute left-0 top-0 grid w-full items-baseline gap-x-3 border-b border-rule py-1.5 pl-2 hover:bg-paper-raised",
                   GRID_CLASS,
                   // Every fifth row takes a heavier rule — the accountant's
                   // convention for keeping your place, and cheaper than zebra.
@@ -247,7 +252,7 @@ export function EntriesTable({
                     <span className="computed px-1">{ticksToUnits(r.economy, units).toFixed(1)}</span>
                   )}
                 </span>
-              </div>
+              </Link>
             );
           })}
         </div>

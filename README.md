@@ -22,6 +22,22 @@ Runs as one `docker compose` stack behind your existing reverse proxy.
   cannot be right is shown in the company of its neighbours, with a proposed
   correction where the arithmetic is unambiguous. Nothing is corrected
   silently, and the whole import can be undone.
+- **Quick vehicle switching.** A vehicle switcher in the top bar (on a phone,
+  in the bottom bar, next to Log · Fuel · Service · Add) jumps to the same page
+  for another vehicle: on Fuel for the car, pick the truck, land on the
+  truck's Fuel. The garage page shows every vehicle and everything due.
+- **Maintenance reminders.** Due by distance or hours, by date, or whichever
+  comes first, repeating on an interval. Start from the usual items (oil,
+  tire rotation, filters, grease fittings for an hour meter…) and adjust.
+  Logging a service entry ticks off the reminders it took care of and
+  schedules the next one; the switcher and Service tab show a count of
+  anything due.
+- **Documents and running costs.** Registration, insurance, inspections and
+  warranties with expiry dates and what each cost. Service pages and reports
+  show cost of ownership — fuel, service and fees — per year and per mile.
+- **Receipts and details.** Attach a photo or PDF to any fuel or service
+  entry or document. Service entries carry the shop, a parts list and notes.
+  Any entry can be edited or deleted, with an undo.
 - **Accounts.** Everyone signed in shares the garage. Administrators add and
   remove people and reset passwords; a reset ends that person's sessions
   immediately.
@@ -59,6 +75,7 @@ and only on the one port your proxy needs.
 | `TRUST_PROXY` | `true` when something else terminates TLS. Default `true`. |
 | `COOKIE_SECURE` | Set `false` only for plain HTTP on a trusted LAN. |
 | `MAX_UPLOAD_MB` | Upload ceiling. Default `32`. |
+| `UPLOAD_DIR` | Where receipts and photos are stored. Default `/app/uploads`, the `uploads` volume. Back it up with the database. |
 | `IMAGE_TAG` | Image version to run. Default `latest`; see [Updates](#updates). |
 | `WATCHTOWER_POLL_INTERVAL` | Seconds between checks for a new release. Default `300`. |
 
@@ -169,6 +186,15 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 The overlay builds both images locally and leaves watchtower out.
 
 `/styleguide` renders every token and primitive on one page.
+
+For a small made-up garage (a car, a truck and a tractor, with reminders and
+documents) to build against without the real spreadsheet:
+
+```sh
+pnpm exec tsx --tsconfig scripts/tsconfig.json scripts/dev-seed.ts
+```
+
+Set `UPLOAD_DIR` to a writable folder when running `pnpm dev` outside Docker.
 
 ### Tests
 

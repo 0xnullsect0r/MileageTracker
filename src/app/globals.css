@@ -49,6 +49,18 @@
   --cat-gas: #a0530a;      /* 5.16:1 */
   --cat-service: #3e6e6e;  /* 5.27:1 */
   --cat-info: #6b6558;     /* 5.31:1 */
+
+  /* Vehicle swatches. Identification only — a 3px edge or a small square
+     beside a name, never a fill behind text. Each clears 4.5:1 on paper so
+     a swatch can also colour a short label. */
+  --vc-blue: #1f5f99;
+  --vc-green: #2e6b45;
+  --vc-rust: #a0461e;
+  --vc-teal: #2f6b6b;
+  --vc-wine: #9a2f45;
+  --vc-olive: #5c5e1c;
+  --vc-slate: #4a5563;
+  --vc-ochre: #875800;
 }
 
 :root:not([data-theme="light"]) {
@@ -66,6 +78,14 @@
     --cat-gas: #f2a93c;
     --cat-service: #7fb5b5;
     --cat-info: #a79e8e;
+    --vc-blue: #7fb0e0;
+    --vc-green: #7fbf94;
+    --vc-rust: #e8906a;
+    --vc-teal: #7fbcbc;
+    --vc-wine: #e08a9c;
+    --vc-olive: #b8ba6a;
+    --vc-slate: #a9b3c1;
+    --vc-ochre: #e0b050;
   }
 }
 
@@ -83,6 +103,14 @@
   --cat-gas: #f2a93c;
   --cat-service: #7fb5b5;
   --cat-info: #a79e8e;
+  --vc-blue: #7fb0e0;
+  --vc-green: #7fbf94;
+  --vc-rust: #e8906a;
+  --vc-teal: #7fbcbc;
+  --vc-wine: #e08a9c;
+  --vc-olive: #b8ba6a;
+  --vc-slate: #a9b3c1;
+  --vc-ochre: #e0b050;
 }
 
 @theme inline {
@@ -144,6 +172,35 @@ body {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
   transition: none;
+}
+
+/* Room under the page for the phone's bottom bar, and the home indicator. */
+.pb-bar {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .pb-bar {
+    padding-bottom: 0;
+  }
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* The vehicle sheet rises from the bottom bar. The only motion in the app. */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sheet-up[data-state="open"] {
+  animation: sheet-up 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.fade-in[data-state="open"] {
+  animation: fade-in 160ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

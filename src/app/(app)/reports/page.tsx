@@ -4,7 +4,8 @@ import { Num } from "@/components/Reading";
 import { Label, Rule } from "@/components/ui";
 import { db } from "@/db";
 import { mileageRates } from "@/db/schema";
-import { listVehicles, loadLog, unitsOf } from "@/lib/data";
+import { listVehicles, loadDocuments, loadLog, unitsOf } from "@/lib/data";
+import { ownershipCosts } from "@/lib/costs";
 import { summarise } from "@/lib/derive";
 import { formatReading, ticksToUnits, unitLabel } from "@/lib/units";
 
@@ -28,7 +29,7 @@ export default async function ReportsPage({
 
   const vehicle = all.find((v) => v.id === vehicleParam) ?? all[0]!;
   const units = unitsOf(vehicle);
-  const log = await loadLog(vehicle.id);
+  const [log, documents] = await Promise.all([loadLog(vehicle.id), loadDocuments(vehicle.id, true)]);
 
   const years = [...new Set(log.map((e) => e.occurredOn.slice(0, 4)))].sort().reverse();
   const year = yearParam && years.includes(yearParam) ? yearParam : (years[0] ?? String(new Date().getFullYear()));
@@ -47,6 +48,20 @@ export default async function ReportsPage({
     const m = summarise(log, { from: `${year}-${mm}-01`, to: `${year}-${mm}-${last}` });
     return { month: `${year}-${mm}`, ...m };
   });
+
+  // Running costs, fees included: registration, insurance and the like come
+  // from documents, dated by when their period started.
+  const own = ownershipCosts(
+    log.map((e) => ({ occurredOn: e.occurredOn, kind: e.category?.kind ?? e.kind, cost: e.cost })),
+    documents.map((d) => ({
+      startsOn: d.startsOn,
+      expiresOn: d.expiresOn,
+      createdOn: d.createdAt.toISOString().slice(0, 10),
+      cost: d.cost === null ? null : Number(d.cost),
+    })),
+    period,
+  );
+  const ownPerUnit = s.totalDistanceTicks > 0 && own.total > 0 ? own.total / ticksToUnits(s.totalDistanceTicks, units) : null;
 
   const total = s.businessDistanceTicks + s.personalDistanceTicks + s.unclassifiedDistanceTicks;
   const pct = (t: number) => (total === 0 ? 0 : (t / total) * 100);
@@ -148,6 +163,21 @@ export default async function ReportsPage({
           <div>
             <Label>Cost per {unitLabel(units)}</Label>
             <p className="num mt-1">{s.costPerTick === null ? "—" : `$${(s.costPerTick * (units.meterType === "HOURS" ? 60 : 100)).toFixed(3)}`}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-10 break-inside-avoid">
+        <Label>Cost of ownership</Label>
+        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-6">
+          <div><Label>Fuel</Label><p className="mt-1"><Num value={own.fuel} prefix="$" /></p></div>
+          <div><Label>Service</Label><p className="mt-1"><Num value={own.service} prefix="$" /></p></div>
+          <div><Label>Fees</Label><p className="mt-1"><Num value={own.fees} prefix="$" /></p></div>
+          <div><Label>Other</Label><p className="mt-1"><Num value={own.other} prefix="$" /></p></div>
+          <div><Label>Total</Label><p className="mt-1 font-semibold"><Num value={own.total} prefix="$" /></p></div>
+          <div>
+            <Label>Per {unitLabel(units)}</Label>
+            <p className="num mt-1">{ownPerUnit === null ? "—" : `$${ownPerUnit.toFixed(3)}`}</p>
           </div>
         </div>
       </section>

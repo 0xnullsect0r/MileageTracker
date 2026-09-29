@@ -26,6 +26,15 @@ export const readingPrecisionEnum = pgEnum("reading_precision", [
 export const fuelUnitEnum = pgEnum("fuel_unit", ["GAL_US", "GAL_IMP", "L", "KWH"]);
 export const categoryKindEnum = pgEnum("category_kind", ["TRIP", "FUEL", "SERVICE", "NOTE"]);
 export const importStatusEnum = pgEnum("import_status", ["DRAFT", "COMMITTED", "REVERTED"]);
+export const dueModeEnum = pgEnum("due_mode", ["READING", "DATE", "EITHER"]);
+export const documentKindEnum = pgEnum("document_kind", [
+  "REGISTRATION",
+  "INSURANCE",
+  "INSPECTION",
+  "EMISSIONS",
+  "WARRANTY",
+  "OTHER",
+]);
 
 /* ------------------------------------------------------------------ auth */
 
@@ -77,6 +86,8 @@ export const vehicles = pgTable("vehicles", {
   vin: text("vin"),
   plate: text("plate"),
   color: text("color"),
+  /** An attachment row holding the vehicle's photo. No FK: attachments reference vehicles' entries, not the reverse. */
+  photoAttachmentId: uuid("photo_attachment_id"),
 
   meterType: meterTypeEnum("meter_type").notNull().default("DISTANCE"),
   distanceUnit: distanceUnitEnum("distance_unit").notNull().default("MI"),
@@ -192,16 +203,37 @@ export const entryAttachments = pgTable(
   "entry_attachments",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    entryId: uuid("entry_id")
-      .notNull()
-      .references(() => entries.id, { onDelete: "cascade" }),
+    /** Exactly one owner: an entry, a document, or (both null) a vehicle photo. */
+    entryId: uuid("entry_id").references(() => entries.id, { onDelete: "cascade" }),
+    documentId: uuid("document_id").references(() => vehicleDocuments.id, { onDelete: "cascade" }),
+    vehicleId: uuid("vehicle_id").references(() => vehicles.id, { onDelete: "cascade" }),
     filename: text("filename").notNull(),
     mime: text("mime").notNull(),
     size: integer("size").notNull(),
     storagePath: text("storage_path").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("attachments_entry_idx").on(t.entryId)],
+  (t) => [
+    index("attachments_entry_idx").on(t.entryId),
+    index("attachments_document_idx").on(t.documentId),
+  ],
+);
+
+/** An optional parts list on a service entry. */
+export const entryParts = pgTable(
+  "entry_parts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => entries.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    partNumber: text("part_number"),
+    qty: numeric("qty", { precision: 9, scale: 2 }),
+    unitCost: numeric("unit_cost", { precision: 10, scale: 2 }),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => [index("parts_entry_idx").on(t.entryId)],
 );
 
 export const serviceReminders = pgTable(
@@ -212,17 +244,72 @@ export const serviceReminders = pgTable(
       .notNull()
       .references(() => vehicles.id, { onDelete: "cascade" }),
     description: text("description").notNull(),
+    /** Which limit counts. EITHER = whichever arrives first. */
+    dueMode: dueModeEnum("due_mode").notNull().default("EITHER"),
     dueReadingTicks: bigint("due_reading_ticks", { mode: "number" }),
     dueOn: date("due_on"),
+    /** Null intervals make a one-off reminder. */
     intervalTicks: bigint("interval_ticks", { mode: "number" }),
     intervalMonths: integer("interval_months"),
+    lastDoneOn: date("last_done_on"),
+    lastDoneReadingTicks: bigint("last_done_reading_ticks", { mode: "number" }),
+    templateKey: text("template_key"),
+    notes: text("notes"),
+    snoozedUntil: date("snoozed_until"),
     completedEntryId: uuid("completed_entry_id").references(() => entries.id, {
       onDelete: "set null",
     }),
     isDone: boolean("is_done").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("reminders_vehicle_idx").on(t.vehicleId)],
+);
+
+/** Every time a reminder was taken care of — its history. */
+export const serviceCompletions = pgTable(
+  "service_completions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reminderId: uuid("reminder_id")
+      .notNull()
+      .references(() => serviceReminders.id, { onDelete: "cascade" }),
+    entryId: uuid("entry_id").references(() => entries.id, { onDelete: "set null" }),
+    doneOn: date("done_on").notNull(),
+    readingTicks: bigint("reading_ticks", { mode: "number" }),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("completions_reminder_idx").on(t.reminderId),
+    index("completions_entry_idx").on(t.entryId),
+  ],
+);
+
+/** Registration, insurance, inspection, warranty — things that expire. */
+export const vehicleDocuments = pgTable(
+  "vehicle_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    vehicleId: uuid("vehicle_id")
+      .notNull()
+      .references(() => vehicles.id, { onDelete: "cascade" }),
+    kind: documentKindEnum("kind").notNull().default("OTHER"),
+    title: text("title").notNull(),
+    provider: text("provider"),
+    reference: text("reference"),
+    startsOn: date("starts_on"),
+    expiresOn: date("expires_on"),
+    /** For warranties that end at a reading as well as a date. */
+    expiresAtReadingTicks: bigint("expires_at_reading_ticks", { mode: "number" }),
+    renewEveryMonths: integer("renew_every_months"),
+    cost: numeric("cost", { precision: 10, scale: 2 }),
+    notes: text("notes"),
+    isArchived: boolean("is_archived").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("documents_vehicle_idx").on(t.vehicleId)],
 );
 
 /* ------------------------------------------------------------ supporting */
@@ -259,3 +346,7 @@ export type Vehicle = typeof vehicles.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Entry = typeof entries.$inferSelect;
 export type ServiceReminder = typeof serviceReminders.$inferSelect;
+export type ServiceCompletion = typeof serviceCompletions.$inferSelect;
+export type VehicleDocument = typeof vehicleDocuments.$inferSelect;
+export type EntryAttachment = typeof entryAttachments.$inferSelect;
+export type EntryPart = typeof entryParts.$inferSelect;
