@@ -5,6 +5,7 @@ import { restoreEntry } from "@/app/(app)/vehicles/[id]/entries/actions";
 import { Banner, Rule } from "@/components/ui";
 import { getVehicle, listCategories, loadLog, unitsOf } from "@/lib/data";
 import { fillGroups, withDistances } from "@/lib/derive";
+import { parseView, viewToSearch } from "@/lib/log-view";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,11 @@ export default async function EntriesPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ review?: string; deleted?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
-  const { review, deleted } = await searchParams;
+  const query = await searchParams;
+  const deleted = typeof query.deleted === "string" ? query.deleted : undefined;
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
 
@@ -46,6 +48,8 @@ export default async function EntriesPage({
     importOriginalValue: e.importOriginalValue,
   }));
 
+  const view = parseView(query);
+
   return (
     // Full-bleed: the one screen allowed to break the container, because
     // more visible rows is the feature.
@@ -70,12 +74,15 @@ export default async function EntriesPage({
 
       <Rule className="mt-6" />
 
+      {/* Keyed by the view, so following a link to a different one (the
+          nav's Log, the garage's review link) resets the table. */}
       <EntriesTable
+        key={viewToSearch(view)}
         vehicleId={id}
         rows={rows}
         units={units}
         categories={cats.map((c) => ({ code: c.code, name: c.name, kind: c.kind }))}
-        initialReviewOnly={review === "1"}
+        initialView={view}
       />
     </main>
   );

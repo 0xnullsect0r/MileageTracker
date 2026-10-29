@@ -59,6 +59,21 @@ export interface EntryDefaults {
 
 const BLANK_PART: PartRow = { name: "", partNumber: "", qty: "", unitCost: "" };
 
+/** Read a money or quantity field the way the server does: "$1,234.5" is fine. */
+function amount(raw: string): number | null {
+  const t = raw.replace(/[$,\s]/g, "");
+  if (t === "") return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Price × quantity, to the cent — the same rounding the server applies. */
+function fuelCost(price: string, qty: string): string | null {
+  const p = amount(price);
+  const q = amount(qty);
+  return p === null || q === null ? null : (p * q).toFixed(2);
+}
+
 export function QuickEntry({
   vehicleId,
   vehicleName,
@@ -85,6 +100,16 @@ export function QuickEntry({
     entry?.categoryId || categories.find((c) => c.code === "P")?.id || categories[0]?.id || "",
   );
   const [parts, setParts] = useState<PartRow[]>(entry?.parts.length ? entry.parts : []);
+  const [price, setPrice] = useState(entry?.pricePerUnit ?? "");
+  const [qty, setQty] = useState(entry?.fuelQty ?? "");
+  const [cost, setCost] = useState(entry?.cost ?? "");
+  // On a fill, cost follows price × quantity until you type a different
+  // figure — the receipt total wins over the arithmetic. An existing entry
+  // whose cost already matches keeps following.
+  const [costTyped, setCostTyped] = useState(() => {
+    if (!entry?.cost) return false;
+    return fuelCost(entry.pricePerUnit, entry.fuelQty) !== Number(entry.cost).toFixed(2);
+  });
   const [deleting, startDelete] = useTransition();
 
   const kind = categories.find((c) => c.id === categoryId)?.kind ?? "TRIP";
@@ -105,6 +130,16 @@ export function QuickEntry({
   }, [reading, lastReadingTicks, units]);
 
   const props = readingInputProps(units);
+  const perUnit = unitLabel(units) === "h" ? "unit" : "gal";
+  const computedCost = isFuel ? fuelCost(price, qty) : null;
+  const costFollows = isFuel && !costTyped;
+  const costValue = costFollows ? (computedCost ?? "") : cost;
+  const costDiffers = costTyped && computedCost !== null && computedCost !== amount(cost)?.toFixed(2);
+  // With a total and a quantity but no price, the price is the one worked out.
+  const impliedPrice =
+    isFuel && amount(price) === null && amount(qty) !== null && amount(cost) !== null
+      ? (amount(cost)! / amount(qty)!).toFixed(3)
+      : null;
   const partsTotal = parts.reduce((a, p) => a + (Number(p.unitCost) || 0) * (Number(p.qty) || 1), 0);
   const setPart = (i: number, k: keyof PartRow, v: string) =>
     setParts((prev) => prev.map((p, j) => (j === i ? { ...p, [k]: v } : p)));
@@ -208,11 +243,11 @@ export function QuickEntry({
             <div className="mt-6 grid gap-6">
               {isFuel && (
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label={`$ / ${unitLabel(units) === "h" ? "unit" : "gal"}`}>
-                    <input className={inputClass} name="pricePerUnit" inputMode="decimal" defaultValue={entry?.pricePerUnit} placeholder="3.279" />
+                  <Field label={`$ / ${perUnit}`}>
+                    <input className={inputClass} name="pricePerUnit" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={impliedPrice ?? "3.279"} autoComplete="off" />
                   </Field>
                   <Field label="Quantity">
-                    <input className={inputClass} name="fuelQty" inputMode="decimal" defaultValue={entry?.fuelQty} placeholder="12.4" />
+                    <input className={inputClass} name="fuelQty" inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="12.4" autoComplete="off" />
                   </Field>
                 </div>
               )}
@@ -221,18 +256,58 @@ export function QuickEntry({
                   <input className={inputClass} name="vendor" defaultValue={entry?.vendor} placeholder="Valvoline" autoComplete="organization" />
                 </Field>
               )}
-              <Field
-                label="Cost"
-                hint={
-                  isFuel
-                    ? "Leave blank and it is worked out from price × quantity."
-                    : parts.length > 0
-                      ? `Leave blank to use the parts total${partsTotal > 0 ? ` ($${partsTotal.toFixed(2)})` : ""}.`
-                      : undefined
-                }
-              >
-                <input className={inputClass} name="cost" inputMode="decimal" defaultValue={entry?.cost} placeholder={isService && partsTotal > 0 ? partsTotal.toFixed(2) : "40.06"} />
-              </Field>
+              <div>
+                <Field
+                  label="Cost"
+                  hint={
+                    isFuel
+                      ? costFollows
+                        ? computedCost
+                          ? "Price × quantity. Type over it to use the receipt total instead."
+                          : "Fills in from price × quantity."
+                        : impliedPrice
+                          ? `Works out to $${impliedPrice} / ${perUnit}.`
+                          : undefined
+                      : parts.length > 0
+                        ? `Leave blank to use the parts total${partsTotal > 0 ? ` ($${partsTotal.toFixed(2)})` : ""}.`
+                        : undefined
+                  }
+                >
+                  <input
+                    className={cn(inputClass, "num")}
+                    name="cost"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={costValue}
+                    onChange={(e) => {
+                      setCost(e.target.value);
+                      // Clearing the field hands it back to the arithmetic.
+                      setCostTyped(e.target.value.trim() !== "");
+                    }}
+                    placeholder={isService && partsTotal > 0 ? partsTotal.toFixed(2) : isFuel ? "" : "40.06"}
+                    aria-describedby={costDiffers ? "cost-differs" : undefined}
+                  />
+                </Field>
+                {/* A typed total that disagrees with the pump arithmetic is
+                    usually a discount or a typo; say which figure is which. */}
+                {costDiffers && (
+                  <p id="cost-differs" className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-ink-muted">
+                    <span>
+                      Price × quantity is <span className="num">${computedCost}</span>.
+                    </span>
+                    <button
+                      type="button"
+                      className="min-h-11 font-semibold text-ink underline hover:text-signal"
+                      onClick={() => {
+                        setCost("");
+                        setCostTyped(false);
+                      }}
+                    >
+                      Use that
+                    </button>
+                  </p>
+                )}
+              </div>
               {isFuel && (
                 <label className="flex min-h-11 items-center gap-3 text-sm">
                   <input type="checkbox" name="isPartialFill" defaultChecked={entry?.isPartialFill} className="size-5 accent-[var(--signal)]" />
