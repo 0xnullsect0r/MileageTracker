@@ -3,6 +3,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { hash as argonHash, verify as argonVerify } from "@node-rs/argon2";
 import { and, eq, gt, lt } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
+import { cache } from "react";
 import { db } from "@/db";
 import { sessions, users, type User } from "@/db/schema";
 
@@ -75,9 +76,14 @@ export interface SessionUser {
   name: string;
   role: "ADMIN" | "USER";
   mustChangePassword: boolean;
+  largeText: boolean;
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+/**
+ * Cached per request: the root layout reads it for the text size and the
+ * app layout for the guard, and that should be one query, not two.
+ */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
   if (!token) return null;
@@ -90,6 +96,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       role: users.role,
       isActive: users.isActive,
       mustChangePassword: users.mustChangePassword,
+      largeText: users.largeText,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -104,8 +111,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     name: row.name,
     role: row.role,
     mustChangePassword: row.mustChangePassword,
+    largeText: row.largeText,
   };
-}
+});
 
 export async function destroyCurrentSession(): Promise<void> {
   const jar = await cookies();

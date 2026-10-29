@@ -104,8 +104,10 @@ export function EntriesTable({
   // measured rather than guessed.
   const [rowHeight, setRowHeight] = useState(ROW_DESKTOP);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => setRowHeight(mq.matches ? ROW_DESKTOP : ROW_TOUCH);
+    // Large text scales the rows and the lg breakpoint along with the type.
+    const scale = document.documentElement.dataset.text === "large" ? 1.25 : 1;
+    const mq = window.matchMedia(`(min-width: ${64 * scale}rem)`);
+    const apply = () => setRowHeight(Math.round((mq.matches ? ROW_DESKTOP : ROW_TOUCH) * scale));
     apply();
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
@@ -212,25 +214,29 @@ export function EntriesTable({
 
       {/* Second line: the narrower cuts, and the order. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-rule py-3 text-sm">
-        <div className="flex items-center gap-2">
-          <label htmlFor="entry-from" className="text-ink-muted">From</label>
-          <input
-            id="entry-from"
-            type="date"
-            className="num min-h-11 border-0 border-b border-rule bg-transparent px-0 text-sm focus:border-signal focus:outline-none"
-            value={view.from}
-            max={view.to || undefined}
-            onChange={(e) => patch({ from: e.target.value })}
-          />
-          <label htmlFor="entry-to" className="text-ink-muted">to</label>
-          <input
-            id="entry-to"
-            type="date"
-            className="num min-h-11 border-0 border-b border-rule bg-transparent px-0 text-sm focus:border-signal focus:outline-none"
-            value={view.to}
-            min={view.from || undefined}
-            onChange={(e) => patch({ to: e.target.value })}
-          />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="flex items-center gap-2">
+            <label htmlFor="entry-from" className="text-ink-muted">From</label>
+            <input
+              id="entry-from"
+              type="date"
+              className="num min-h-11 border-0 border-b border-rule bg-transparent px-0 text-sm focus:border-signal focus:outline-none"
+              value={view.from}
+              max={view.to || undefined}
+              onChange={(e) => patch({ from: e.target.value })}
+            />
+          </span>
+          <span className="flex items-center gap-2">
+            <label htmlFor="entry-to" className="text-ink-muted">to</label>
+            <input
+              id="entry-to"
+              type="date"
+              className="num min-h-11 border-0 border-b border-rule bg-transparent px-0 text-sm focus:border-signal focus:outline-none"
+              value={view.to}
+              min={view.from || undefined}
+              onChange={(e) => patch({ to: e.target.value })}
+            />
+          </span>
         </div>
 
         {/* Below lg most columns are hidden, so their headers cannot be
@@ -282,11 +288,12 @@ export function EntriesTable({
         className={cn(
           "grid gap-x-3 border-b border-rule text-[0.75rem] font-semibold uppercase tracking-[0.06em] text-ink-muted",
           GRID_CLASS,
+          "log-grid",
         )}
       >
         <SortHeader k="date" {...header}>Date</SortHeader>
         <SortHeader k="reading" align="right" {...header}>Reading</SortHeader>
-        <SortHeader k="distance" align="right" className="order-last lg:order-none" {...header} label="Distance">Δ</SortHeader>
+        <SortHeader k="distance" align="right" className="log-delta order-last lg:order-none" {...header} label="Distance">Δ</SortHeader>
         <SortHeader k="category" align="center" className="hidden lg:block" {...header} label="Category">Cat</SortHeader>
         <SortHeader k="description" {...header}>Description</SortHeader>
         <SortHeader k="price" align="right" className="hidden lg:block" {...header} label={`Price ${perUnit}`}>${perUnit}</SortHeader>
@@ -337,6 +344,7 @@ export function EntriesTable({
                 className={cn(
                   "absolute left-0 top-0 grid w-full items-baseline gap-x-3 border-b border-rule py-1.5 pl-2 hover:bg-paper-raised",
                   GRID_CLASS,
+                  "log-grid",
                   // Every fifth row takes a heavier rule — the accountant's
                   // convention for keeping your place, and cheaper than zebra.
                   (item.index + 1) % 5 === 0 && "border-b-[1.5px]",
@@ -365,7 +373,7 @@ export function EntriesTable({
                     </>
                   )}
                 </span>
-                <span className="num order-last whitespace-nowrap text-right text-[0.8125rem] text-ink-muted lg:order-none">
+                <span className="log-delta num order-last whitespace-nowrap text-right text-[0.8125rem] text-ink-muted lg:order-none">
                   {r.distanceTicks === null ? (
                     "—"
                   ) : (
@@ -429,7 +437,9 @@ export function EntriesTable({
  * which the brief treats as a hard failure.
  */
 const GRID_CLASS =
-  "grid-cols-[3.25rem_4.75rem_minmax(5rem,1fr)_3.5rem] " +
+  // The description gives way first: at 375 with large text the fixed
+  // columns alone take most of the row.
+  "grid-cols-[3.25rem_4.75rem_minmax(0,1fr)_3.5rem] " +
   // lg, not md: the nine-column grid needs ~880px, and md begins at exactly
   // 768 — the one width where it engages and immediately overflows.
   "lg:grid-cols-[6rem_6rem_4.75rem_2.25rem_minmax(8rem,1fr)_4.5rem_4.5rem_5rem_4rem]";

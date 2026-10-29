@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "large_text" boolean DEFAULT false NOT NULL;

@@ -88,8 +88,8 @@ function UserMenu({ user }: { user: ShellUser }) {
         <Menu.Portal>
           <Menu.Content align="end" sideOffset={6} className="z-50 min-w-[12rem] rounded-[2px] border border-ink bg-paper-raised py-1">
             <Menu.Item asChild>
-              <Link href="/account/password" className="flex min-h-11 items-center px-3 text-sm outline-none data-[highlighted]:bg-paper">
-                Change password
+              <Link href="/account" className="flex min-h-11 items-center px-3 text-sm outline-none data-[highlighted]:bg-paper">
+                Text size &amp; account
               </Link>
             </Menu.Item>
             <Menu.Item
@@ -146,7 +146,7 @@ function MobileMenu({ user, links, pathname }: { user: ShellUser; links: [string
               {user.name}
             </span>
             <Dialog.Close asChild>
-              <Link href="/account/password" className={cn(row, "text-ink-muted")}>Change password</Link>
+              <Link href="/account" className={cn(row, "text-ink-muted")}>Text size &amp; account</Link>
             </Dialog.Close>
             <form action={logout}>
               <button type="submit" className={cn(row, "w-full text-left text-ink-muted")}>Sign out</button>

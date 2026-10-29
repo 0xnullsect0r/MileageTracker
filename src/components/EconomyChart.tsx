@@ -36,14 +36,14 @@ export function EconomyChart({ data, unit }: { data: EconomyPoint[]; unit: strin
           <CartesianGrid stroke="var(--rule)" strokeWidth={1} vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fill: "var(--ink-muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}
+            tick={{ fill: "var(--ink-muted)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--rule)" }}
             minTickGap={48}
           />
           <YAxis
             yAxisId="economy"
-            tick={{ fill: "var(--ink-muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}
+            tick={{ fill: "var(--ink-muted)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}
             tickLine={false}
             axisLine={false}
             width={44}
@@ -51,7 +51,7 @@ export function EconomyChart({ data, unit }: { data: EconomyPoint[]; unit: strin
           <YAxis
             yAxisId="price"
             orientation="right"
-            tick={{ fill: "var(--ink-muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}
+            tick={{ fill: "var(--ink-muted)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}
             tickLine={false}
             axisLine={false}
             width={44}
@@ -61,7 +61,7 @@ export function EconomyChart({ data, unit }: { data: EconomyPoint[]; unit: strin
               background: "var(--paper-raised)",
               border: "1px solid var(--rule)",
               borderRadius: 2,
-              fontSize: 13,
+              fontSize: "0.8125rem",
               fontFamily: "var(--font-mono)",
               color: "var(--ink)",
             }}

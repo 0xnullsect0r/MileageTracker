@@ -38,6 +38,9 @@ Runs as one `docker compose` stack behind your existing reverse proxy.
 - **Receipts and details.** Attach a photo or PDF to any fuel or service
   entry or document. Service entries carry the shop, a parts list and notes.
   Any entry can be edited or deleted, with an undo.
+- **Large text.** Anyone can switch to larger type and controls under
+  *Your account* in their name menu. It follows them to every device and
+  changes nobody else's view.
 - **Accounts.** Everyone signed in shares the garage. Administrators add and
   remove people and reset passwords; a reset ends that person's sessions
   immediately.

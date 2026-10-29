@@ -34,12 +34,12 @@ export function CostChart({ data }: { data: YearCosts[] }) {
             <CartesianGrid stroke="var(--rule)" vertical={false} />
             <XAxis
               dataKey="year"
-              tick={{ fill: "var(--ink-muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}
+              tick={{ fill: "var(--ink-muted)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}
               tickLine={false}
               axisLine={{ stroke: "var(--rule)" }}
             />
             <YAxis
-              tick={{ fill: "var(--ink-muted)", fontSize: 12, fontFamily: "var(--font-mono)" }}
+              tick={{ fill: "var(--ink-muted)", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}
               tickLine={false}
               axisLine={false}
               width={52}
@@ -51,7 +51,7 @@ export function CostChart({ data }: { data: YearCosts[] }) {
                 background: "var(--paper-raised)",
                 border: "1px solid var(--rule)",
                 borderRadius: 2,
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 fontFamily: "var(--font-mono)",
                 color: "var(--ink)",
               }}

@@ -113,6 +113,63 @@
   --vc-ochre: #e0b050;
 }
 
+/* ---------------------------------------------------------------------------
+   Large text — a per-person setting (Your account → Text size).
+   Every size and space in the app is in rem, so raising the root size scales
+   type, padding and tap targets together. The breakpoints scale with it,
+   below, so each layout switches at the width it actually fits — the same
+   thing browser zoom does — rather than squeezing the desktop grid into a
+   tablet at 125%.
+   --------------------------------------------------------------------------- */
+:root[data-text="large"] {
+  font-size: 125%;
+  /* Secondary text carries more weight at this size: take it closer to ink. */
+  --ink-muted: #45413a;    /* 9.3:1 on paper */
+}
+:root[data-text="large"]:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --ink-muted: #c4bcae; /* 9.5:1 */
+  }
+}
+:root[data-text="large"][data-theme="dark"] {
+  --ink-muted: #c4bcae;
+}
+:root[data-text="large"] body {
+  line-height: 1.6;
+}
+
+/* On a phone, large text leaves the log too narrow for four columns; the
+   distance goes, so the description stays readable. The reading stays. */
+@media (width < 30rem) {
+  :root[data-text="large"] .log-grid {
+    grid-template-columns: 3.25rem 4.75rem minmax(0, 1fr);
+  }
+  :root[data-text="large"] .log-delta {
+    display: none;
+  }
+}
+
+@custom-variant sm {
+  @media (width >= 40rem) { &:where(:root:not([data-text="large"]) *) { @slot; } }
+  @media (width >= 50rem) { &:where(:root[data-text="large"] *) { @slot; } }
+}
+@custom-variant md {
+  @media (width >= 48rem) { &:where(:root:not([data-text="large"]) *) { @slot; } }
+  @media (width >= 60rem) { &:where(:root[data-text="large"] *) { @slot; } }
+}
+@custom-variant lg {
+  @media (width >= 64rem) { &:where(:root:not([data-text="large"]) *) { @slot; } }
+  @media (width >= 80rem) { &:where(:root[data-text="large"] *) { @slot; } }
+}
+@custom-variant xl {
+  @media (width >= 80rem) { &:where(:root:not([data-text="large"]) *) { @slot; } }
+  @media (width >= 100rem) { &:where(:root[data-text="large"] *) { @slot; } }
+}
+@custom-variant max-sm {
+  @media (width < 40rem) { &:where(:root:not([data-text="large"]) *) { @slot; } }
+  @media (width < 50rem) { &:where(:root[data-text="large"] *) { @slot; } }
+}
+
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
@@ -179,7 +236,12 @@ body {
   padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
 }
 @media (min-width: 768px) {
-  .pb-bar {
+  :root:not([data-text="large"]) .pb-bar {
+    padding-bottom: 0;
+  }
+}
+@media (min-width: 960px) {
+  :root[data-text="large"] .pb-bar {
     padding-bottom: 0;
   }
 }
